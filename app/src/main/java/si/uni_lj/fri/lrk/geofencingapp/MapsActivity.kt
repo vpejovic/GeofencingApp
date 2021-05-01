@@ -31,12 +31,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
 
     companion object {
         const val TAG = "MapsActivity"
-        const val RC_LOC_PERM = 42
         const val PERMISSION_REQUEST_BACKGROUND_LOCATION = 1
         const val PERMISSION_REQUEST_FINE_LOCATION = 2
-        val PERMISSIONS = arrayOf(ACCESS_FINE_LOCATION)//, ACCESS_BACKGROUND_LOCATION)
     }
-
 
     private lateinit var mMap: GoogleMap
     private lateinit var mHome: Marker
@@ -50,6 +47,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
@@ -70,8 +68,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
     @SuppressLint("MissingPermission")
     private fun whenMapReady() {
 
-        var latitude: AtomicReference<Double>  =  AtomicReference(0.0)
-        var longitude: AtomicReference<Double>  =  AtomicReference(0.0)
+        val latitude: AtomicReference<Double>  =  AtomicReference(0.0)
+        val longitude: AtomicReference<Double>  =  AtomicReference(0.0)
 
         mMap.isMyLocationEnabled = true
 
@@ -152,6 +150,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
         if (::mGeofencePendingIntent.isInitialized)
             return mGeofencePendingIntent
 
+        // TODO: Create PendingIntent that will be called once a geofence is exited/entered
+
+        Log.d(TAG, "Creating Pending Intent" )
         val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
         mGeofencePendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         return mGeofencePendingIntent
@@ -159,21 +160,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
 
     private fun getGeofencingRequest (type: String, lat: Double, lon: Double): GeofencingRequest {
 
+        // TODO: Set geofences for home, work, fitness
+
+        Log.d(TAG, "getGeofencingRequest: $lat, $lon")
         lateinit var geofence: Geofence
 
         if (type.equals(getString(R.string.map_marker_home))) {
             geofence = with(Geofence.Builder()){
                 setRequestId(type)
-                setCircularRegion(lat, lon, 500F)
+                setCircularRegion(lat, lon, 200F)
                 setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or
-                Geofence.GEOFENCE_TRANSITION_EXIT)
+                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
                 build()
             }
         } else if (type.equals(getString(R.string.map_marker_work))) {
             geofence = with(Geofence.Builder()){
                 setRequestId(type)
-                setCircularRegion(lat, lon, 100F)
+                setCircularRegion(lat, lon, 300F)
                 setExpirationDuration(Geofence.NEVER_EXPIRE)
                         .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
                 build()
@@ -181,27 +184,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
         } else if (type.equals(getString(R.string.map_marker_fitness))) {
             geofence = with(Geofence.Builder()){
                 setRequestId(type)
-                setCircularRegion(lat, lon, 200F)
+                setCircularRegion(lat, lon, 300F)
                 setExpirationDuration(Geofence.NEVER_EXPIRE)
                 setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
-                setLoiteringDelay(5*1000)
+                setLoiteringDelay(1*1000)
                 build()
             }
         }
 
         return with(GeofencingRequest.Builder()){
             setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            addGeofence(geofence)
+            addGeofences(listOf(geofence))
             build()
         }
     }
 
     @SuppressLint("MissingPermission")
     private fun addGeofence(request : GeofencingRequest){
+
+        // TODO: add geofence through the Geofencing Client
         mGeofencingClient.addGeofences(request, getGeofencePendingIntent())
                 .addOnCompleteListener(this)
     }
 
+
+    override fun onComplete(task: Task<Void>) {
+        if (task.isSuccessful) {
+            Toast.makeText(this, "Setting geofence successful", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "Setting geofence unsuccessful", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // For drawing icons on the map
     private fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
         return ContextCompat.getDrawable(context, vectorResId)?.run {
             setBounds(0, 0, intrinsicWidth, intrinsicHeight)
@@ -211,17 +226,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
         }
     }
 
-
-    override fun onComplete(task: Task<Void>) {
-        if (task.isSuccessful) {
-            Log.d(TAG, "Setting geofence successful!")
-            Toast.makeText(this, "Setting geofence successful", Toast.LENGTH_LONG).show()
-        } else {
-            Log.d(TAG, "Setting geofence successful!")
-            Toast.makeText(this, "Setting geofence successful", Toast.LENGTH_LONG).show()
-        }
-    }
-
+    // For handling permissions
     private fun sortPermissions(){
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -261,16 +266,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
         } else {
             if (!shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 requestPermissions(
-                        arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                                /*Manifest.permission.ACCESS_BACKGROUND_LOCATION*/
-                        ),
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                         PERMISSION_REQUEST_FINE_LOCATION
                 )
             } else {
                 val builder = AlertDialog.Builder(this)
                 builder.setTitle("Functionality limited")
-                builder.setMessage("Since location access has not been granted, this app will not be able to discover beacons.  Please go to Settings -> Applications -> Permissions and grant location access to this app.")
+                builder.setMessage("Since location access has not been granted, this app will not be able to discover geofences.  Please go to Settings -> Applications -> Permissions and grant location access to this app.")
                 builder.setPositiveButton(android.R.string.ok, null)
                 builder.setOnDismissListener {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)

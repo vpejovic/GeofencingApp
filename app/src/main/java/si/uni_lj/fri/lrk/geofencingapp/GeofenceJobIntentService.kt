@@ -23,7 +23,7 @@ class GeofenceJobIntentService : JobIntentService() {
 
         const val TAG = "GeofenceJobIS"
         const val JOB_ID = 123
-        const val CHANNELID = "si.uni_lj.fri.pbd.notificationdirectexamplekotlin.NEWS"
+        const val CHANNELID = "si.uni_lj.fri.lrk.geofencingapp.GEOFENCING_EVENTS"
         const val NOTIFICATIONID = 101
 
         fun enqueueWork(context: Context, intent: Intent) {
@@ -31,15 +31,15 @@ class GeofenceJobIntentService : JobIntentService() {
         }
     }
 
-    private var notificationManager: NotificationManagerCompat? = null
-
     override fun onCreate() {
         super.onCreate()
 
-        createChannel(CHANNELID, "DirectReply News", "Example News Channel")
+        createChannel(CHANNELID, "Geofencing", "Reporting geofencing events")
     }
 
     override fun onHandleWork(intent: Intent) {
+
+        Log.d(TAG, "onHandleWork")
 
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
 
@@ -56,24 +56,28 @@ class GeofenceJobIntentService : JobIntentService() {
                 geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL ||
                         geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT){
 
+            Log.d(TAG, "geofenceTransition + $geofenceTransition")
+
             val triggeringGeofences = geofencingEvent.triggeringGeofences
 
-            val geofenceTransitionDetails = getGeofenceTransitionDetails(geofenceTransition,
+            val geofenceTransitionTitle = getGeofenceTitle(geofenceTransition,
                     triggeringGeofences)
 
-            sendNotification(geofenceTransitionDetails)
+            val geofenceTransitionDetails = getToDoString(triggeringGeofences)
+
+            sendNotification(geofenceTransitionTitle, geofenceTransitionDetails)
 
         }
-
-
-
     }
 
-    private fun getGeofenceTransitionDetails(geofenceTransition: Int, triggeringGeofences: List<Geofence>): String {
+    private fun getGeofenceTitle(geofenceTransition: Int, triggeringGeofences: List<Geofence>): String {
 
-        val geofenceTransitionString = getTransitionString(geofenceTransition)
-
-        val geofenceToDoString = getToDoString(triggeringGeofences)
+        val geofenceTransitionString = when(geofenceTransition) {
+            Geofence.GEOFENCE_TRANSITION_ENTER -> getString(R.string.geofence_transition_entered)
+            Geofence.GEOFENCE_TRANSITION_DWELL -> getString(R.string.geofence_transition_dwelled)
+            Geofence.GEOFENCE_TRANSITION_EXIT -> getString(R.string.geofence_transition_exited)
+            else -> getString(R.string.unknown_geofence_transition)
+        }
 
         val triggeringGeofencesIdsList = ArrayList<String>()
         for (geofence in triggeringGeofences) {
@@ -85,27 +89,18 @@ class GeofenceJobIntentService : JobIntentService() {
         return "$geofenceTransitionString: $triggeringGeofencesIdsString"
     }
 
-    private fun getTransitionString(transitionType: Int): String {
-        return when(transitionType) {
-            Geofence.GEOFENCE_TRANSITION_ENTER -> getString(R.string.geofence_transition_entered)
-            Geofence.GEOFENCE_TRANSITION_DWELL -> getString(R.string.geofence_transition_dwelled)
-            Geofence.GEOFENCE_TRANSITION_EXIT -> getString(R.string.geofence_transition_exited)
-            else -> getString(R.string.unknown_geofence_transition)
-        }
-    }
-
     private fun getToDoString(triggeringGeofences: List<Geofence>): String {
 
         var todoString = ""
         for (geofence in triggeringGeofences) {
             if (geofence.requestId.equals(getString(R.string.map_marker_home))) {
-                todoString = getString(R.string.todo_home)
+                todoString += getString(R.string.todo_home)
             }
             if (geofence.requestId.equals(getString(R.string.map_marker_work))) {
-                todoString = getString(R.string.todo_work)
+                todoString += getString(R.string.todo_work)
             }
             if (geofence.requestId.equals(getString(R.string.map_marker_fitness))) {
-                todoString = getString(R.string.todo_fitness)
+                todoString += getString(R.string.todo_fitness)
             }
         }
         return todoString
@@ -120,11 +115,14 @@ class GeofenceJobIntentService : JobIntentService() {
                 lightColor = Color.RED
                 enableLights(true)
             }
-            notificationManager?.createNotificationChannel(channel)
+
+            with(NotificationManagerCompat.from(this)) {
+                createNotificationChannel(channel)
+            }
         }
     }
 
-    private fun sendNotification(notificationDetails: String) {
+    private fun sendNotification(notificationTitle: String, notificationDetails: String) {
 
         val notificationIntent = Intent(applicationContext, MapsActivity::class.java)
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -134,12 +132,14 @@ class GeofenceJobIntentService : JobIntentService() {
         val newNotification = NotificationCompat.Builder(this, CHANNELID)
                 .setColor(ContextCompat.getColor(this, R.color.design_default_color_primary))
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle("Geofencing")
+                .setContentTitle(notificationTitle)
                 .setContentText(notificationDetails)
                 .setContentIntent(notifPendingIntent)
                 .setAutoCancel(true)
                 .build();
 
-        notificationManager?.notify(NOTIFICATIONID, newNotification)
+        with(NotificationManagerCompat.from(this)) {
+            notify(NOTIFICATIONID, newNotification)
+        }
     }
 }

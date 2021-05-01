@@ -41,7 +41,7 @@
         </activity>
         <receiver android:name=".GeofenceBroadcastReceiver"
             android:enabled="true"
-            android:exported="true"/>
+            android:exported="false"/>
 
         <service android:name=".GeofenceJobIntentService"
             android:exported="true"
