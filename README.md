@@ -1,4 +1,4 @@
-# Geofencing Application
+# Tetramax Geofencing Application
 
 ## Introduction 
 
@@ -23,14 +23,14 @@ Our app is going to rely on Google Map tiles. Using this requires a Google Maps 
 Ensure that the project compiles and runs on your emulator or phone. You should see a map (the actual location will depend on what you set in the emulator) with three movable icons, for work, home, and gym, on it. Test whether moving the icons works.
 
 ### Setting up the emulator ###
-To test our app we are not going to run around the city to trigger geofences, but will use the emulator and mock locations provided through a pre-collected trace. First, download the gpx trace from [here](traces/ljubljana.gpx). Then, open the extended controls of the emulator (three dots) and put `46.05178` for latitude and `14.49968` for longitude and click `Send`. Then, open Google Maps on the emulator and click on My Location icon. This should set the emulator's location to Ljubljana, Slovenia. Next, back in the extended controls load the gpx trace you previously downloaded. Finally, open our Geofencing App and using the extended controls play the gpx trace. You should see the user's location moving through Ljubljana. 
+To test our app we are not going to run around the city to trigger geofences, but will use the emulator and mock locations provided through a pre-collected trace. First, download the gpx trace from [here](traces/ljubljana.gpx). Then, open the extended controls of the emulator (three dots) and put `46.05178` for latitude and `14.49968` for longitude and click `Send`. Then, open Google Maps on the emulator and click on My Location icon. This should set the emulator's location to Ljubljana. Next, back in the extended controls load the gpx trace you previously downloaded. Finally, open our Geofencing App and using the extended controls play the gpx trace. You should see the user's location moving through Ljubljana. 
 
 ### Brief Tutorial on Geofence in Android
 Geofences are set through `GeofencingClient`. This class has a method `addGeofences` that takes the following arguments: 
 * An instance of `GeofencingRequest` representing the definition of the geofence (e.g. it’s location, transition type monitored, etc.);
 * An instance of `PendingIntent` referring to the `Intent` that will be called when the right transition to/from a geofence happens;
 
-We want our app to send notifications when a user is entering/exiting a geofence defined by the location of the icons on the map. Thus, setting the `GeofenceRequest` should happen when a user moves an icon on the map. Further, the notification should be fired when the right event happens. We don’t know whether the user will have our application open at the time when this happens, thus, we should be prepared to send the notifications from the background. We can do that from a `BroadcastReceiver`. The receiver will be triggered by Google Play Services when the geofence-related transition happens and will then issue a notification to the user. 
+We want our app to send notifications when a user is entering/exiting a geofence defined by the location of the icons on the map. Thus, setting the `GeofenceRequest` should happen when a user moves an icon on the map. Further, the notification should be fired when the right event happens. We don’t know whether the user will have our application open at the time when this happens, thus, we should be prepared to send the notifications from the background. We can do that via `JobIntentService`. This UI-less class enables us to perform short actions from the background. However, we will not call this class directly, but have a `BroadcastReceiver` that will be triggered by Google Play Services when the geofence-related transition happens. Then, this receiver is going to forward the request to `JobIntentService`, which will then issue a notification to the user. 
 
 In a nutshell:
 * **MapsActivity:**
@@ -38,7 +38,8 @@ In a nutshell:
     * Set `GeofencingRequest` to define the geofences
     * Set `PendingIntent` to call `BroadcastReceiver` when a geofencing-related transition happens;
 * **BroadcastReceiver:**
-    * Get called when Google Play Services detect geofencing-related events;
+    * Call `JobIntentService` when Google Play Services detect geofencing-related events;
+* **JobIntentService:**
     * Fire a notification with the appropriate text, depending on which geofence was triggered;
  
 Make sure you understand the above before you proceed with programming.
@@ -59,7 +60,7 @@ Implement a private function `getGeofencingRequest` that takes a marker type (ho
 
 To build the Geofences you should use something like (example for `home`):
 ```Kotlin
-val geofence = with(Geofence.Builder()){
+geofence = with(Geofence.Builder()){
                 setRequestId(type)
                 setCircularRegion(lat, lon, 200F)
                 setExpirationDuration(Geofence.NEVER_EXPIRE)
@@ -69,8 +70,6 @@ val geofence = with(Geofence.Builder()){
 ```
 
 Exceptionally, for the dwell transition you should also set the delay before the action is triggered. This ensures that the notification is not triggered if a user simply passes by the gym. Use: `setLoiteringDelay(1000)`
-
-Think how would you implement setting the geofence parameters for each of the three locations without having too much redundant code.
 
 To build and return the `GeofenceRequest`, you just need to put the `Geofence` in a list and call the request builder:
 
@@ -82,23 +81,18 @@ return with(GeofencingRequest.Builder()){
 ```
 
 ### Define `PendingIntent` to be activated when geofence-transition happens ###
-If conditions for one of the geofences are satisfied, an Intent will be fired to call `BroadcastReceiver`. We will define a `PendingIntent`, essentially granting the geofencing client the ability to execute a predefined intent. The `Intent` will be broadcasting to `GeofenceBroadcastReceiver`:
-```Kotlin
-private val mGeofencePendingIntent: PendingIntent by lazy {
-  val intent = Intent(this,
-    GeofenceBroadcastReceiver::class.java)
+Finish the `getGeofencePendingIntent` function implementation. We keep the `PendingIntent` reference in a property `mGeofencePendingIntent`. If the property is already set (not null), we simply return it. Otherwise, set it to call a broadcast to `GeofenceBroadcastReceiver`:
 
-  PendingIntent.getBroadcast(this, 0, intent,
-    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
-}
+```Kotlin
+val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
+mGeofencePendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
 ```
-Note the `lazy` keyword in the above excerpt - this tells the compiler that the initialisation should not happen immediately, when the `Activity` is created, but only the first time `mGeofencePendingIntent` is actually accessed. This saves resources, in case the property is never executed during the `Activity` lifecycle (e.g. a user opens an app and does not set any geofences). 
 
 ### Adding the geofence through the client
 With the `Intent` prepared and geofences specified, we can tell our `GeofencingClient` to start observing the location and firing our `Intent` in case the geofence conditions are satisfied. 
 In `addGeofence` function add:
 ```Kotlin
-mGeofencingClient.addGeofences(request, mGeofencePendingIntent)
+mGeofencingClient.addGeofences(request, getGeofencePendingIntent())
                 .addOnCompleteListener(this)
 ```
 
@@ -106,26 +100,11 @@ mGeofencingClient.addGeofences(request, mGeofencePendingIntent)
 Finally, uncomment the code in `setOnMarkerDragListener` to enable geofence setting when a marker is moved.
 
 ### Sending notifications
-Open `GeofenceBroadcastReceiver`. This is a receiver that will be called when a geofencing-related event is detected. Check its `onReceive` method. Here we handle Intents that have triggered the receiver. We should check which geofence was triggered and what was the event. We should then send a different notification depending on what has happened. Most of the code is already written, but make sure you understand what each of the lines is for. 
+Open `GeofenceJobIntentService`. This is a service that will be called when a geofencing-related event is detected. Check its `onHandleWork` method. Here we handle Intents that have triggered the service. We should check which geofence was triggered and what was the event. We should then send a different notification depending on what has happened. The whole class is already written, but make sure you understand what each of the lines is for. 
 
-What is missing, though, is the actual notification posting. In latest versions of Android SDK, notifications should be grouped in channels, which why we have already created one in `onReceive`. We should now define what happens when a user clicks on a notification - our `MapsActivity` should be opened. This `Activity` will be started by using *surprise* an `Intent`, more specifically a `PendingIntent`. We also need to define a few other properties of a notification, such as its title, an icon that will be shown, and so on. The full code is here:
+What is missing, though, is a means to fire the `GeofenceJobIntentService` one the geofence transition is detected. Remember that `GeofenceBroadcastReceiver` is called using the `Intent` we supplied in `MapsActivity`. Open `GeofenceBroadcastReceiver` and in `onReceive` add the following line to make sure that `GeofenceJobIntentService` is called:
 ```Kotlin
-val notificationIntent = Intent(context, MapsActivity::class.java)
-notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-val notifPendingIntent = PendingIntent.getActivity(
-  context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
-val newNotification = NotificationCompat.Builder(context, CHANNELID)
-  .setSmallIcon(android.R.drawable.ic_dialog_info)
-  .setContentTitle(notificationTitle)
-  .setContentText(notificationDetails)
-  .setContentIntent(notifPendingIntent)
-  .setAutoCancel(true)
-  .build();
-
-with(NotificationManagerCompat.from(context)) {
-  notify(NOTIFICATIONID, newNotification)
-}
+GeofenceJobIntentService.enqueueWork(context, intent)
 ```
 
 ## Testing ##
