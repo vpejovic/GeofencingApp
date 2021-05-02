@@ -130,6 +130,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
                 val lat = marker.position.latitude
                 val lon = marker.position.longitude
 
+                // TODO: Uncomment when addGeofence function is completed
+
                 if (marker.title.equals(getString(R.string.map_marker_home))) {
                     addGeofence(getGeofencingRequest(getString(R.string.map_marker_home), lat, lon))
                 } else if (marker.title.equals(getString(R.string.map_marker_work))) {
@@ -158,9 +160,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
         return mGeofencePendingIntent
     }
 
-    private fun getGeofencingRequest (type: String, lat: Double, lon: Double): GeofencingRequest {
+    // TODO: Implement getGeofencingRequest function
 
-        // TODO: Set geofences for home, work, fitness
+    private fun getGeofencingRequest (type: String, lat: Double, lon: Double): GeofencingRequest {
 
         Log.d(TAG, "getGeofencingRequest: $lat, $lon")
         lateinit var geofence: Geofence
@@ -178,7 +180,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
                 setRequestId(type)
                 setCircularRegion(lat, lon, 300F)
                 setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
+                setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
                 build()
             }
         } else if (type.equals(getString(R.string.map_marker_fitness))) {
@@ -204,7 +206,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
 
         // TODO: add geofence through the Geofencing Client
         mGeofencingClient.addGeofences(request, getGeofencePendingIntent())
-                .addOnCompleteListener(this)
+               .addOnCompleteListener(this)
     }
 
 
