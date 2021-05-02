@@ -16,8 +16,7 @@ class GeofenceBroadcastReceiver: BroadcastReceiver() {
         if (context != null && intent != null) {
 
             // TODO: Enqueue a JobIntentService
-            Log.d(TAG, "enqueuing work")
-            GeofenceJobIntentService.enqueueWork(context, intent)
+
         }
 
     }

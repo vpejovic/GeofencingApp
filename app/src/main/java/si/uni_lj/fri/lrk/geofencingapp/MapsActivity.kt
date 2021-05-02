@@ -56,7 +56,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         // TODO: instantiate the geofencing client
-        mGeofencingClient = LocationServices.getGeofencingClient(this)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -130,13 +129,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
                 val lat = marker.position.latitude
                 val lon = marker.position.longitude
 
-                if (marker.title.equals(getString(R.string.map_marker_home))) {
+                // TODO: Uncomment when addGeofence function is completed
+
+                /*if (marker.title.equals(getString(R.string.map_marker_home))) {
                     addGeofence(getGeofencingRequest(getString(R.string.map_marker_home), lat, lon))
                 } else if (marker.title.equals(getString(R.string.map_marker_work))) {
                     addGeofence(getGeofencingRequest(getString(R.string.map_marker_work), lat, lon))
                 } else if (marker.title.equals(getString(R.string.map_marker_fitness))) {
                     addGeofence(getGeofencingRequest(getString(R.string.map_marker_fitness), lat, lon))
-                }
+                }*/
             }
 
             override fun onMarkerDragStart(p0: Marker?) {}
@@ -151,60 +152,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
             return mGeofencePendingIntent
 
         // TODO: Create PendingIntent that will be called once a geofence is exited/entered
-
-        Log.d(TAG, "Creating Pending Intent" )
-        val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
-        mGeofencePendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         return mGeofencePendingIntent
+
     }
 
-    private fun getGeofencingRequest (type: String, lat: Double, lon: Double): GeofencingRequest {
+    // TODO: Implement getGeofencingRequest function
 
-        // TODO: Set geofences for home, work, fitness
-
-        Log.d(TAG, "getGeofencingRequest: $lat, $lon")
-        lateinit var geofence: Geofence
-
-        if (type.equals(getString(R.string.map_marker_home))) {
-            geofence = with(Geofence.Builder()){
-                setRequestId(type)
-                setCircularRegion(lat, lon, 200F)
-                setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-                build()
-            }
-        } else if (type.equals(getString(R.string.map_marker_work))) {
-            geofence = with(Geofence.Builder()){
-                setRequestId(type)
-                setCircularRegion(lat, lon, 300F)
-                setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
-                build()
-            }
-        } else if (type.equals(getString(R.string.map_marker_fitness))) {
-            geofence = with(Geofence.Builder()){
-                setRequestId(type)
-                setCircularRegion(lat, lon, 300F)
-                setExpirationDuration(Geofence.NEVER_EXPIRE)
-                setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
-                setLoiteringDelay(1*1000)
-                build()
-            }
-        }
-
-        return with(GeofencingRequest.Builder()){
-            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            addGeofences(listOf(geofence))
-            build()
-        }
-    }
 
     @SuppressLint("MissingPermission")
     private fun addGeofence(request : GeofencingRequest){
 
         // TODO: add geofence through the Geofencing Client
-        mGeofencingClient.addGeofences(request, getGeofencePendingIntent())
-                .addOnCompleteListener(this)
+
     }
 
 
