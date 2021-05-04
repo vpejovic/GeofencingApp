@@ -42,7 +42,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
 
     private lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mGeofencingClient: GeofencingClient
-    private lateinit var mGeofencePendingIntent: PendingIntent
+    private val mGeofencePendingIntent: PendingIntent by lazy {
+        val intent = Intent(this,
+                GeofenceBroadcastReceiver::class.java)
+        PendingIntent.getBroadcast(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -148,18 +153,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
 
     }
 
-    private fun getGeofencePendingIntent(): PendingIntent {
-        if (::mGeofencePendingIntent.isInitialized)
-            return mGeofencePendingIntent
-
-        // TODO: Create PendingIntent that will be called once a geofence is exited/entered
-
-        Log.d(TAG, "Creating Pending Intent" )
-        val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
-        mGeofencePendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-        return mGeofencePendingIntent
-    }
-
     // TODO: Implement getGeofencingRequest function
 
     private fun getGeofencingRequest (type: String, lat: Double, lon: Double): GeofencingRequest {
@@ -205,7 +198,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
     private fun addGeofence(request : GeofencingRequest){
 
         // TODO: add geofence through the Geofencing Client
-        mGeofencingClient.addGeofences(request, getGeofencePendingIntent())
+        mGeofencingClient.addGeofences(request, mGeofencePendingIntent)
                .addOnCompleteListener(this)
     }
 
