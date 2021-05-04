@@ -81,18 +81,22 @@ return with(GeofencingRequest.Builder()){
 ```
 
 ### Define `PendingIntent` to be activated when geofence-transition happens ###
-Finish the `getGeofencePendingIntent` function implementation. We keep the `PendingIntent` reference in a property `mGeofencePendingIntent`. If the property is already set (not null), we simply return it. Otherwise, set it to call a broadcast to `GeofenceBroadcastReceiver`:
+We will now create `mGeofencePendingIntent` property that refers to a `PendingIntent` set it to call a broadcast to `GeofenceBroadcastReceiver`. This property is initialized lazily, i.e. only once we first time need it:
 
 ```Kotlin
-val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
-mGeofencePendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+private val mGeofencePendingIntent: PendingIntent by lazy {
+    val intent = Intent(this,
+    GeofenceBroadcastReceiver::class.java)
+    PendingIntent.getBroadcast(this, 0, intent,
+    PendingIntent.FLAG_UPDATE_CURRENT)
+}
 ```
 
 ### Adding the geofence through the client
 With the `Intent` prepared and geofences specified, we can tell our `GeofencingClient` to start observing the location and firing our `Intent` in case the geofence conditions are satisfied. 
 In `addGeofence` function add:
 ```Kotlin
-mGeofencingClient.addGeofences(request, getGeofencePendingIntent())
+mGeofencingClient.addGeofences(request, mGeofencePendingIntent)
                 .addOnCompleteListener(this)
 ```
 
