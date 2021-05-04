@@ -42,7 +42,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
 
     private lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mGeofencingClient: GeofencingClient
-    private lateinit var mGeofencePendingIntent: PendingIntent
+
+    // TODO: Create PendingIntent that will be called once a geofence is exited/entered
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,14 +148,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, OnCompleteListener
 
     }
 
-    private fun getGeofencePendingIntent(): PendingIntent {
-        if (::mGeofencePendingIntent.isInitialized)
-            return mGeofencePendingIntent
-
-        // TODO: Create PendingIntent that will be called once a geofence is exited/entered
-        return mGeofencePendingIntent
-
-    }
 
     // TODO: Implement getGeofencingRequest function
 

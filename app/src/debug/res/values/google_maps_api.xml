@@ -4,15 +4,7 @@
 
     To get one, follow this link, follow the directions and press "Create" at the end:
 
-    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=61:C8:99:D7:E4:9D:35:CE:EF:8A:D0:84:9A:49:85:08:49:8D:C2:8A%3Bsi.uni_lj.fri.lrk.geofencingapp
-
-    You can also add your credentials to an existing key, using these values:
-
-    Package name:
-    si.uni_lj.fri.lrk.geofencingapp
-
-    SHA-1 certificate fingerprint:
-    61:C8:99:D7:E4:9D:35:CE:EF:8A:D0:84:9A:49:85:08:49:8D:C2:8A
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID
 
     Alternatively, follow the directions here:
     https://developers.google.com/maps/documentation/android/start#get-key
