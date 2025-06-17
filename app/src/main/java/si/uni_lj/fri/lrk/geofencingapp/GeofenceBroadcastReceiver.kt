@@ -136,7 +136,22 @@ class GeofenceBroadcastReceiver: BroadcastReceiver() {
     private fun sendNotification(notificationTitle: String, notificationDetails: String, context: Context) {
 
         // TODO: Send notification
+        val notificationIntent = Intent(context, MapsActivity::class.java)
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val notifPendingIntent = PendingIntent.getActivity(
+            context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
+        val newNotification = NotificationCompat.Builder(context, CHANNELID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(notificationTitle)
+            .setContentText(notificationDetails)
+            .setContentIntent(notifPendingIntent)
+            .setAutoCancel(true)
+            .build();
+
+        with(NotificationManagerCompat.from(context)) {
+            notify(NOTIFICATIONID, newNotification)
+        }
     }
 
 
