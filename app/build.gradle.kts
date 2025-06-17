@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "si.uni_lj.fri.lrk.geofencingapp"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "si.uni_lj.fri.lrk.geofencingapp"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -37,8 +37,8 @@ android {
 
 dependencies {
 
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
