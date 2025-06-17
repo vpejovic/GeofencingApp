@@ -57,6 +57,7 @@ class MapsActivity : AppCompatActivity() , OnMapReadyCallback, OnCompleteListene
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         // TODO: instantiate the geofencing client
+
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -155,7 +156,6 @@ class MapsActivity : AppCompatActivity() , OnMapReadyCallback, OnCompleteListene
                 val lon = marker.position.longitude
 
                 // TODO: Uncomment when addGeofence function is completed
-
 //                if (marker.title.equals(getString(R.string.map_marker_home))) {
 //                    addGeofence(getGeofencingRequest(getString(R.string.map_marker_home), lat, lon))
 //                } else if (marker.title.equals(getString(R.string.map_marker_work))) {
